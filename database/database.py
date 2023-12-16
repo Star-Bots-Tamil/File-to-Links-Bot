@@ -1,5 +1,5 @@
 import motor.motor_asyncio
-from info import DATABASE_NAME, DATABASE_URI
+from info import DATABASE_NAME, DATABASE_URI, PROTECT_CONTENT, DOWNLOAD_TEXT_URL, IS_TUTORIAL, CUSTOM_FILE_CAPTION, SHORTLINK_URL, SHORTLINK_API, IS_SHORTLINK
 
 class Database:
     
@@ -65,6 +65,21 @@ class Database:
         users = self.col.find({'ban_status.is_banned': True})
         b_users = [user['id'] async for user in users]
         return b_users
+
+    async def get_settings(self, id):
+        default = {
+            'file_secure': PROTECT_CONTENT,
+            'tutorial' : DOWNLOAD_TEXT_URL,
+            'is_tutorial' : IS_TUTORIAL,
+            'caption': CUSTOM_FILE_CAPTION,
+            'shortlink': SHORTLINK_URL,
+            'shortlink_api': SHORTLINK_API,
+            'is_shortlink': IS_SHORTLINK
+        }
+        user = await self.col.find_one({'id':int(id)})
+        if user:
+            return user.get('settings', default)
+        return default
 
     async def get_db_size(self):
         return (await self.db.command("dbstats"))['dataSize']
