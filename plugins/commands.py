@@ -1,21 +1,12 @@
-from __future__ import unicode_literals
 import os
 import logging
 import random
-import ytthumb
 import asyncio
 import time
-from database import fsub_sql as sql
 from pyrogram.types import ChatPermissions, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
-from countryinfo import CountryInfo
-from plugins.admin_check import admin_check
 from plugins.extract import extract_time, extract_user                               
-from pyrogram.types import Message
-from pyrogram.types import ChatPermissions
-from plugins.admin_check import admin_check
 from plugins.extract import extract_time, extract_user 
-from plugins.admin_check import admin_fliter
 from info import ADMINS
 from Script import script
 from time import time, sleep
@@ -23,21 +14,10 @@ from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.errors.exceptions.bad_request_400 import ChatAdminRequired, UserAdminInvalid
-from utils import get_settings, get_size, is_subscribed, save_group_settings, temp, verify_user, check_token, check_verification, get_token, send_all, get_channel, get_group, get_admin
-from plugins.admin_check import admin_check
+from utils import get_settings, is_subscribed, save_user_settings, temp
 from urllib.parse import quote
-from googletrans import Translator
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
-from telegraph import upload_file
-from database.gtrans_mdb import find, find_one
-from utils import get_file_id
 from plugins.keyboard import ikb
 from pyrogram.file_id import FileId
-from Script import script
-from pyrogram import filters
-from pyrogram import Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os, asyncio, aiofiles, aiofiles.os, datetime, traceback,random, string, time, logging
 logger = logging.getLogger(__name__)
@@ -45,89 +25,32 @@ from random import choice
 import os
 import math
 import time
-import heroku3
 import requests
-from database.gtrans_mdb import set, unset, insert
 from pyrogram import Client, filters, enums
-from database.users_chats_db import db
-from pyrogram import Client, filters, enums
-from pyrogram.errors import ChatAdminRequired, FloodWait
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-from database.ia_filterdb import Media, get_file_details, unpack_new_file_id, get_bad_files
-from database.users_chats_db import db
-from plugins.list import list
+from database.database import db
 from info import *
-from utils import get_settings, get_size, is_subscribed, save_group_settings, temp
-from database.connections_mdb import active_connection
 import re
 import json
 import base64
-from pyrogram import Client, filters
 import datetime
 import time
-from database.users_chats_db import db
-from info import ADMINS, OWNER
 from utils import broadcast_messages
 import asyncio
 import re, asyncio, time, shutil, psutil, os, sys
-from pyrogram import Client, filters, enums
-from pyrogram.types import *
 import os
 import aiohttp
 import requests
-from pyrogram import Client, filters, enums
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InlineQueryResultArticle, InputTextMessageContent
 from pyrogram.handlers import MessageHandler
 from pyshorteners import Shortener
-from info import BOT_START_TIME, ADMINS, FILE_DELETE_TIMER
 from utils import humanbytes
 logger = logging.getLogger(__name__)
-from pyrogram import Client, filters, __version__
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery  
 from asyncio.exceptions import TimeoutError
 from telethon.sync import TelegramClient
-from telethon.tl.functions.channels import JoinChannelRequest, LeaveChannelRequest
-from telethon.sessions import StringSession
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import (
-    ApiIdInvalid,
-    PhoneNumberInvalid,
-    PhoneCodeInvalid,
-    PhoneCodeExpired,
-    SessionPasswordNeeded,
-    PasswordHashInvalid
-)
-from telethon.errors import (
-    ApiIdInvalidError,
-    PhoneNumberInvalidError,
-    PhoneCodeInvalidError,
-    PhoneCodeExpiredError,
-    SessionPasswordNeededError,
-    PasswordHashInvalidError
-)
-from database.utils import progress_for_pyrogram, convert, humanbytes
-from hachoir.metadata import extractMetadata
-from hachoir.parser import createParser
-from pyrogram.errors import FloodWait, UserNotParticipant
-import os 
-import humanize
 from stream.utils.human_readable import humanbytes
 from urllib.parse import quote_plus
 from stream.utils.file_properties import get_name, get_hash, get_media_file_size
-from shortzy import Shortzy
 import os, requests, asyncio, math, time, wget
-from pyrogram import filters, Client
-from pyrogram.types import Message
-from youtube_search import YoutubeSearch
-from youtubesearchpython import SearchVideos
-from yt_dlp import YoutubeDL
-import traceback
-from asyncio import get_running_loop
 from io import BytesIO
-from googletrans import Translator
-from gtts import gTTS
-from pyrogram import Client, filters
-from pyrogram.types import Message
 
 #=====================================================
 
