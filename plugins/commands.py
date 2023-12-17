@@ -429,32 +429,21 @@ async def log_file(bot, message):
     except Exception as e:
         await message.reply(str(e))
 
-@Client.on_message(filters.command('set_shortlink'))
-async def set_shortlink(bot, message):
-    chat_type = message.chat.type
-    if chat_type == enums.ChatType.PRIVATE:
-        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command only works on groups !</b>")
-    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
-        grpid = message.chat.id
-        title = message.chat.title
-    else:
-        return
+@Client.on_message(filters.command('set_personal_shortlink'))
+async def set_personal_shortlink(bot, message):
+    user_id = message.from_user.id
     data = message.text
-    userid = message.from_user.id
-    user = await bot.get_chat_member(grpid, userid)
-    if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
-        return await message.reply_text("<b>You don't have access to use this command !</b>")
-    else:
-        pass
     try:
         command, shortlink_url, api = data.split(" ")
-    except:
-        return await message.reply_text("<b>Command Incomplete :(\n\nGive me a shortlink and api along with the command !\n\nFormat: <code>/set_shortner tnshort.net d03a53149bf186ac74d58ff80d916f7a79ae5745</code></b>")
+    except ValueError:
+        return await message.reply_text("<b>Command Incomplete :(\n\nGive me a shortlink and api along with the command !\n\nFormat: <code>/set_personal_shortlink tnshort.net d03a53149bf186ac74d58ff80d916f7a79ae5745</code></b>")
+
     reply = await message.reply_text("<b>Please Wait...</b>")
-    await save_group_settings(grpid, 'shortlink', shortlink_url)
-    await save_group_settings(grpid, 'shortlink_api', api)
-    await save_group_settings(grpid, 'is_shortlink', True)
-    await reply.edit_text(f"<b>Successfully added Shortlink API for {title}.\n\nCurrent Shortlink Website: <code>{shortlink_url}</code>\nCurrent API: <code>{api}</code></b>")
+    # Assuming you have a function to save user settings, replace the following line accordingly
+    await save_user_settings(user_id, 'shortlink', shortlink_url)
+    await save_user_settings(user_id, 'shortlink_api', api)
+    await save_user_settings(user_id, 'is_shortlink', True)
+    await reply.edit_text(f"<b>Successfully added Shortlink API for {message.from_user.username}.\n\nCurrent Shortlink Website: <code>{shortlink_url}</code>\nCurrent API: <code>{api}</code></b>")
 
 @Client.on_message(filters.command("get_shortlink"))
 async def showshortlink(bot, message):
