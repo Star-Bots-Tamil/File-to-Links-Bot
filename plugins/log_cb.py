@@ -32,7 +32,7 @@ async def __(c, m):
                 if resp.status == 201:
                     response = await resp.json()
                     key = response["result"]["key"]
-                    file_ext = ".txt"
+                    file_ext = ".log"
                     neko = neko_linker + key + file_ext
                     neko_link = f"{neko_linker}{key}{file_ext}"
                     neko_link_raw = f"{neko_linker}raw/{key}{file_ext}"
