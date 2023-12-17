@@ -1,7 +1,6 @@
 import logging
 from pyrogram.errors import InputUserDeactivated, UserNotParticipant, FloodWait, UserIsBlocked, PeerIdInvalid
 from info import *
-from imdb import Cinemagoer
 import asyncio
 from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from pyrogram import enums
@@ -15,7 +14,7 @@ import os
 import string
 from datetime import datetime, timedelta, date, time
 from typing import List
-from database.users_chats_db import db
+from database.database import db
 from bs4 import BeautifulSoup
 import requests
 import aiohttp
@@ -23,35 +22,13 @@ import aiohttp
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-BTN_URL_REGEX = re.compile(
-    r"(\[([^\[]+?)\]\((buttonurl|buttonalert):(?:/{0,2})(.+?)(:same)?\))"
-)
-
-imdb = Cinemagoer()
-TOKENS = {}
-VERIFIED = {}
 BANNED = {}
-SMART_OPEN = '“'
-SMART_CLOSE = '”'
-START_CHAR = ('\'', '"', SMART_OPEN)
 
 # temp db for banned 
 class temp(object):
     BANNED_USERS = []
-    BANNED_CHATS = []
-    ME = None
-    CURRENT=int(os.environ.get("SKIP", 0))
-    CANCEL = False
-    MELCOW = {}
-    U_NAME = None
-    B_NAME = None
     SETTINGS = {}
-    VERIFY = {}
-    SEND_ALL_TEMP = {}
-    KEYWORD = {}
-    FILES = {}
     USERS_CANCEL = False
-    GROUPS_CANCEL = False
     
 async def is_subscribed(bot, query=None, userid=None):
     
@@ -71,86 +48,6 @@ async def is_subscribed(bot, query=None, userid=None):
             return True
 
     return False
-
-async def get_poster(query, bulk=False, id=False, file=None):
-    if not id:
-        # https://t.me/GetTGLink/4183
-        query = (query.strip()).lower()
-        title = query
-        year = re.findall(r'[1-2]\d{3}$', query, re.IGNORECASE)
-        if year:
-            year = list_to_str(year[:1])
-            title = (query.replace(year, "")).strip()
-        elif file is not None:
-            year = re.findall(r'[1-2]\d{3}', file, re.IGNORECASE)
-            if year:
-                year = list_to_str(year[:1]) 
-        else:
-            year = None
-        movieid = imdb.search_movie(title.lower(), results=10)
-        if not movieid:
-            return None
-        if year:
-            filtered=list(filter(lambda k: str(k.get('year')) == str(year), movieid))
-            if not filtered:
-                filtered = movieid
-        else:
-            filtered = movieid
-        movieid=list(filter(lambda k: k.get('kind') in ['movie', 'tv series'], filtered))
-        if not movieid:
-            movieid = filtered
-        if bulk:
-            return movieid
-        movieid = movieid[0].movieID
-    else:
-        movieid = query
-    movie = imdb.get_movie(movieid)
-    if movie.get("original air date"):
-        date = movie["original air date"]
-    elif movie.get("year"):
-        date = movie.get("year")
-    else:
-        date = "N/A"
-    plot = ""
-    if not LONG_IMDB_DESCRIPTION:
-        plot = movie.get('plot')
-        if plot and len(plot) > 0:
-            plot = plot[0]
-    else:
-        plot = movie.get('plot outline')
-    if plot and len(plot) > 800:
-        plot = plot[0:800] + "..."
-
-    return {
-        'title': movie.get('title'),
-        'votes': movie.get('votes'),
-        "aka": list_to_str(movie.get("akas")),
-        "seasons": movie.get("number of seasons"),
-        "box_office": movie.get('box office'),
-        'localized_title': movie.get('localized title'),
-        'kind': movie.get("kind"),
-        "imdb_id": f"tt{movie.get('imdbID')}",
-        "cast": list_to_str(movie.get("cast")),
-        "runtime": list_to_str(movie.get("runtimes")),
-        "countries": list_to_str(movie.get("countries")),
-        "certificates": list_to_str(movie.get("certificates")),
-        "languages": list_to_str(movie.get("languages")),
-        "director": list_to_str(movie.get("director")),
-        "writer":list_to_str(movie.get("writer")),
-        "producer":list_to_str(movie.get("producer")),
-        "composer":list_to_str(movie.get("composer")) ,
-        "cinematographer":list_to_str(movie.get("cinematographer")),
-        "music_team": list_to_str(movie.get("music department")),
-        "distributors": list_to_str(movie.get("distributors")),
-        'release_date': date,
-        'year': movie.get('year'),
-        'genres': list_to_str(movie.get("genres")),
-        'poster': movie.get('full-size cover url'),
-        'plot': plot,
-        'rating': str(movie.get("rating")),
-        'url':f'https://www.imdb.com/title/tt{movieid}'
-    }
-# https://github.com/odysseusmax/animated-lamp/blob/2ef4730eb2b5f0596ed6d03e7b05243d93e3415b/bot/utils/broadcast.py#L37
 
 async def broadcast_messages(user_id, message):
     try:
@@ -173,33 +70,18 @@ async def broadcast_messages(user_id, message):
     except Exception as e:
         return False, "Error"
 
-async def search_gagala(text):
-    usr_agent = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-        'Chrome/61.0.3163.100 Safari/537.36'
-        }
-    text = text.replace(" ", '+')
-    url = f'https://www.google.com/search?q={text}'
-    response = requests.get(url, headers=usr_agent)
-    response.raise_for_status()
-    soup = BeautifulSoup(response.text, 'html.parser')
-    titles = soup.find_all( 'h3' )
-    return [title.getText() for title in titles]
-
-
-
-async def get_settings(group_id):
-    settings = temp.SETTINGS.get(group_id)
+async def get_settings(user_id):
+    settings = temp.SETTINGS.get(user_id)
     if not settings:
-        settings = await db.get_settings(group_id)
-        temp.SETTINGS[group_id] = settings
+        settings = await db.get_settings(user_id)
+        temp.SETTINGS[user_id] = settings
     return settings
     
-async def save_group_settings(group_id, key, value):
-    current = await get_settings(group_id)
+async def save_user_settings(user_id, key, value):
+    current = await get_settings(user_id)
     current[key] = value
-    temp.SETTINGS[group_id] = current
-    await db.update_settings(group_id, current)
+    temp.SETTINGS[user_id] = current
+    await db.update_settings(user_id, current)
     
 def get_size(size):
     """Get size in readable format"""
@@ -452,8 +334,8 @@ def humanbytes(size):
         n += 1
     return str(round(size, 2)) + " " + Dic_powerN[n] + 'B'
 
-async def get_shortlink(chat_id, link):
-    settings = await get_settings(chat_id) #fetching settings for group
+async def get_shortlink(user_id, link):
+    settings = await get_settings(user_id) #fetching settings for group
     if 'shortlink' in settings.keys():
         URL = settings['shortlink']
     else:
@@ -510,286 +392,10 @@ async def get_shortlink(chat_id, link):
             else:
                 return f'https://{URL}/api?api={API}&link={link}'
 
-async def get_tutorial(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
+async def get_tutorial(user_id):
+    settings = await get_settings(user_id) #fetching settings for user
     if 'tutorial' in settings.keys():
         TUTORIAL_URL = settings['tutorial']
     else:
         TUTORIAL_URL = TUTORIAL
     return TUTORIAL_URL
-
-async def get_channel(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
-    if 'channel' in settings.keys():
-        CHANNEL_URL = settings['channel']
-    else:
-        CHANNEL_URL = CHANNEL
-    return CHANNEL_URL
-
-async def get_group(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
-    if 'group' in settings.keys():
-        GROUP_URL = settings['group']
-    else:
-        GROUP_URL = GROUP
-    return GROUP_URL
-
-async def get_rules(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
-    if 'rules' in settings.keys():
-        RULES_URL = settings['rules']
-    else:
-        RULES_URL = RULES
-    return RULES_URL
-
-async def get_share(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
-    if 'share' in settings.keys():
-        SHARE_URL = settings['share']
-    else:
-        SHARE_URL = SHARE
-    return SHARE_URL
-
-async def get_admin(chat_id):
-    settings = await get_settings(chat_id) #fetching settings for group
-    if 'admin' in settings.keys():
-        ADMIN_URL = settings['admin']
-    else:
-        ADMIN_URL = ADMIN
-    return ADMIN_URL
-
-async def get_verify_shorted_link(num, link):
-    if int(num) == 1:
-        API = SHORTLINK_API
-        URL = SHORTLINK_URL
-    else:
-        API = VERIFY2_API
-        URL = VERIFY2_URL
-    https = link.split(":")[0]
-    if "http" == https:
-        https = "https"
-        link = link.replace("http", https)
-
-    if URL == "api.shareus.in":
-        url = f"https://{URL}/shortLink"
-        params = {"token": API,
-                  "format": "json",
-                  "link": link,
-                  }
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, raise_for_status=True, ssl=False) as response:
-                    data = await response.json(content_type="text/html")
-                    if data["status"] == "success":
-                        return data["shortlink"]
-                    else:
-                        logger.error(f"Error: {data['message']}")
-                        return f'https://{URL}/shortLink?token={API}&format=json&link={link}'
-
-        except Exception as e:
-            logger.error(e)
-            return f'https://{URL}/shortLink?token={API}&format=json&link={link}'
-    else:
-        url = f'https://{URL}/api'
-        params = {'api': API,
-                  'url': link,
-                  }
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, params=params, raise_for_status=True, ssl=False) as response:
-                    data = await response.json()
-                    if data["status"] == "success":
-                        return data["shortenedUrl"]
-                    else:
-                        logger.error(f"Error: {data['message']}")
-                        if URL == 'clicksfly.com':
-                            return f'https://{URL}/api?api={API}&url={link}'
-                        else:
-                            return f'https://{URL}/api?api={API}&link={link}'
-        except Exception as e:
-            logger.error(e)
-            if URL == 'clicksfly.com':
-                return f'https://{URL}/api?api={API}&url={link}'
-            else:
-                return f'https://{URL}/api?api={API}&link={link}'
-
-async def check_token(bot, userid, token):
-    user = await bot.get_users(userid)
-    if not await db.is_user_exist(user.id):
-        await db.add_user(user.id, user.first_name)
-        await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(user.id, user.mention))
-    if user.id in TOKENS.keys():
-        TKN = TOKENS[user.id]
-        if token in TKN.keys():
-            is_used = TKN[token]
-            if is_used == True:
-                return False
-            else:
-                return True
-    else:
-        return False
-
-async def get_token(bot, userid, link, fileid):
-    user = await bot.get_users(userid)
-    if not await db.is_user_exist(user.id):
-        await db.add_user(user.id, user.first_name)
-        await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(user.id, user.mention))
-    token = ''.join(random.choices(string.ascii_letters + string.digits, k=7))
-    TOKENS[user.id] = {token: False}
-    url = f"{link}verify-{user.id}-{token}-{fileid}"
-    status = await get_verify_status(user.id)
-    date_var = status["date"]
-    time_var = status["time"]
-    hour, minute, second = time_var.split(":")
-    year, month, day = date_var.split("-")
-    last_date, last_time = str((datetime(year=int(year), month=int(month), day=int(day), hour=int(hour), minute=int(minute), second=int(second)))-timedelta(hours=12)).split(" ")
-    tz = pytz.timezone('Asia/Kolkata')
-    curr_date, curr_time = str(datetime.now(tz)).split(" ")
-    if last_date == curr_date:
-        vr_num = 2
-    else:
-        vr_num = 1
-    shortened_verify_url = await get_verify_shorted_link(vr_num, url)
-    return str(shortened_verify_url)
-
-async def send_all(bot, userid, files, ident):
-    if (AUTH_CHANNEL or REQ_CHANNEL) and not await is_subscribed(bot, userid):
-        try:
-            invite_link = await bot.create_chat_invite_link(int(AUTH_CHANNEL))
-            invite_link3 = await bot.create_chat_invite_link(int(REQ_CHANNEL))
-        except ChatAdminRequired:
-            logger.error("Mᴀᴋᴇ sᴜʀᴇ Bᴏᴛ ɪs ᴀᴅᴍɪɴ ɪɴ Fᴏʀᴄᴇsᴜʙ ᴄʜᴀɴɴᴇʟ")
-            return
-        if ident == 'filep' or 'checksubp':
-            pre = 'checksubp'
-        else:
-            pre = 'checksub' 
-        btn = [[
-                InlineKeyboardButton("❆ Jᴏɪɴ Oᴜʀ Bᴀᴄᴋ-Uᴘ Cʜᴀɴɴᴇʟ ❆", url=invite_link.invite_link)
-            ],[
-                InlineKeyboardButton("Join Our Channel", url=CHNL_LNK)
-            ],[
-                InlineKeyboardButton("Join Our Request Channel", url="https://t.me/+YeduZ6Ztq2YwNTdl")
-            ],[
-                InlineKeyboardButton("↻ Tʀʏ Aɢᴀɪɴ", callback_data=f"{pre}#send_all")
-            ]]
-        await bot.send_message(
-            chat_id=userid,
-            text="**Yᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴ ᴏᴜʀ Bᴀᴄᴋ-ᴜᴘ ᴄʜᴀɴɴᴇʟ ɢɪᴠᴇɴ ʙᴇʟᴏᴡ sᴏ ʏᴏᴜ ᴅᴏɴ'ᴛ ɢᴇᴛ ᴛʜᴇ ᴍᴏᴠɪᴇ ғɪʟᴇ...\n\nIғ ʏᴏᴜ ᴡᴀɴᴛ ᴛʜᴇ ᴍᴏᴠɪᴇ ғɪʟᴇ, ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ '❆ Jᴏɪɴ Oᴜʀ Bᴀᴄᴋ-Uᴘ Cʜᴀɴɴᴇʟ ❆' ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ ᴀɴᴅ ᴊᴏɪɴ ᴏᴜʀ ʙᴀᴄᴋ-ᴜᴘ ᴄʜᴀɴɴᴇʟ, ᴛʜᴇɴ ᴄʟɪᴄᴋ ᴏɴ ᴛʜᴇ '↻ Tʀʏ Aɢᴀɪɴ' ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ...\n\nTʜᴇɴ ʏᴏᴜ ᴡɪʟʟ ɢᴇᴛ ᴛʜᴇ ᴍᴏᴠɪᴇ ғɪʟᴇs...**",
-            reply_markup=InlineKeyboardMarkup(btn),
-            parse_mode=enums.ParseMode.MARKDOWN
-            )
-        return 'fsub'
-    
-    if IS_VERIFY and not await check_verification(bot, userid):
-        btn = [[
-            InlineKeyboardButton("Vᴇʀɪғʏ", url=await get_token(bot, userid, f"https://telegram.me/{temp.U_NAME}?start=", 'send_all')),
-            InlineKeyboardButton("Hᴏᴡ Tᴏ Vᴇʀɪғʏ", url=HOW_TO_VERIFY)
-        ]]
-        await bot.send_message(
-            chat_id=userid,
-            text="<b>Yᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪғɪᴇᴅ!\nKɪɴᴅʟʏ ᴠᴇʀɪғʏ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ Sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ᴀᴄᴄᴇss ᴛᴏ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏᴠɪᴇs ᴜɴᴛɪʟ 12 ʜᴏᴜʀs ғʀᴏᴍ ɴᴏᴡ !</b>",
-            protect_content=True if PROTECT_CONTENT else False,
-            reply_markup=InlineKeyboardMarkup(btn)
-        )
-        return 'verify'
-    
-    for file in files:
-        f_caption = file.caption
-        title = file.file_name
-        size = get_size(file.file_size)
-        settings = await get_settings(message.chat.id)
-        FILE_CAPTION = settings["caption"]
-        if settings["caption"]:
-            try:
-                f_caption = FILE_CAPTION.format(file_name='' if title is None else title,
-                                                        file_size='' if size is None else size,
-                                                        file_caption='' if f_caption is None else f_caption)
-            except Exception as e:
-                print(e)
-                f_caption = f_caption
-        if f_caption is None:
-            f_caption = f"{title}"
-        try:
-            await bot.send_cached_media(
-                chat_id=userid,
-                file_id=file.file_id,
-                caption=f_caption,
-                protect_content=True if ident == "filep" else False,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                        [
-                        InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=GRP_LNK),
-                        InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=CHNL_LNK)
-                    ],[
-                        InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url="t.me/creatorbeatz")
-                        ]
-                    ]
-                )
-            )
-        except UserIsBlocked:
-            logger.error(f"Usᴇʀ: {userid} ʙʟᴏᴄᴋᴇᴅ ᴛʜᴇ ʙᴏᴛ. Uɴʙʟᴏᴄᴋ ᴛʜᴇ ʙᴏᴛ!")
-            return "Usᴇʀ ɪs ʙʟᴏᴄᴋᴇᴅ ᴛʜᴇ ʙᴏᴛ ! Uɴʙʟᴏᴄᴋ ᴛᴏ sᴇɴᴅ ғɪʟᴇs!"
-        except PeerIdInvalid:
-            logger.error("Eʀʀᴏʀ: Pᴇᴇʀ ID ɪɴᴠᴀʟɪᴅ !")
-            return "Pᴇᴇʀ ID ɪɴᴠᴀʟɪᴅ !"
-        except Exception as e:
-            logger.error(f"Eʀʀᴏʀ: {e}")
-            return f"Eʀʀᴏʀ: {e}"
-    return 'done'
-
-async def get_verify_status(userid):
-    status = temp.VERIFY.get(userid)
-    if not status:
-        status = await db.get_verified(userid)
-        temp.VERIFY[userid] = status
-    return status
-    
-async def update_verify_status(userid, date_temp, time_temp):
-    status = await get_verify_status(userid)
-    status["date"] = date_temp
-    status["time"] = time_temp
-    temp.VERIFY[userid] = status
-    await db.update_verification(userid, date_temp, time_temp)
-
-async def verify_user(bot, userid, token):
-    user = await bot.get_users(int(userid))
-    if not await db.is_user_exist(user.id):
-        await db.add_user(user.id, user.first_name)
-        await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(user.id, user.mention))
-    TOKENS[user.id] = {token: True}
-    tz = pytz.timezone('Asia/Kolkata')
-    date_var = datetime.now(tz)+timedelta(hours=12)
-    temp_time = date_var.strftime("%H:%M:%S")
-    date_var, time_var = str(date_var).split(" ")
-    await update_verify_status(user.id, date_var, temp_time)
-
-async def check_verification(bot, userid):
-    user = await bot.get_users(int(userid))
-    if not await db.is_user_exist(user.id):
-        await db.add_user(user.id, user.first_name)
-        await bot.send_message(LOG_CHANNEL, script.LOG_TEXT_P.format(user.id, user.mention))
-    tz = pytz.timezone('Asia/Kolkata')
-    today = date.today()
-    now = datetime.now(tz)
-    curr_time = now.strftime("%H:%M:%S")
-    hour1, minute1, second1 = curr_time.split(":")
-    curr_time = time(int(hour1), int(minute1), int(second1))
-    status = await get_verify_status(user.id)
-    date_var = status["date"]
-    time_var = status["time"]
-    years, month, day = date_var.split('-')
-    comp_date = date(int(years), int(month), int(day))
-    hour, minute, second = time_var.split(":")
-    comp_time = time(int(hour), int(minute), int(second))
-    if comp_date<today:
-        return False
-    else:
-        if comp_date == today:
-            if comp_time<curr_time:
-                return False
-            else:
-                return True
-        else:
-            return True
-            
