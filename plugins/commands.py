@@ -382,3 +382,47 @@ async def channel_receive_handler(bot, broadcast):
         await bot.send_message(chat_id=FILES_CHANNEL, text=f"**#ERROR_TRACKEBACK:** `{e}`", disable_web_page_preview=True)
         print(f"Can't Edit Boardcast Message!\nError:  **Give me Edit Permission in Updates and Log Channel!{e}**")
 		
+@Client.on_message(filters.command('settings'))
+async def show_settings_options(bot, message):
+    keyboard = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("Shortlink", callback_data="shortlink")],
+            # Add more settings options if needed
+        ]
+    )
+    await message.reply_text("<b>Choose a setting:</b>", reply_markup=keyboard)
+
+@Client.on_callback_query(filters.regex("^shortlink$"))
+async def shortlink_callback_handler(bot, query):
+    user_id = query.from_user.id
+    data = query.data
+
+    if data == "shortlink":
+        # Assuming you have a function to retrieve user settings, replace the following line accordingly
+        user_settings = await get_user_settings(user_id)
+
+        shortlink_status = user_settings.get('is_shortlink', False)
+
+        if shortlink_status:
+            text = "Shortlink feature is currently enabled. Do you want to turn it off?"
+            callback_data = "shortlink_off"
+        else:
+            text = "Shortlink feature is currently disabled. Do you want to turn it on?"
+            callback_data = "shortlink_on"
+
+        keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("Yes", callback_data=callback_data)]])
+        await query.answer(text)
+        await query.edit_message_text(text, reply_markup=keyboard)
+
+@Client.on_callback_query(filters.regex("^shortlink_(on|off)$"))
+async def shortlink_status_callback_handler(bot, query):
+    user_id = query.from_user.id
+    data = query.data
+
+    if data == "shortlink_on":
+        await save_user_settings(user_id, 'is_shortlink', True)
+        await query.edit_message_text("Shortlink feature is now enabled.")
+    elif data == "shortlink_off":
+        # Assuming you have a function to clear user settings, replace the following line accordingly
+        await clear_user_settings(user_id, ['shortlink', 'shortlink_api', 'is_shortlink'])
+        await query.edit_message_text("Shortlink feature is now disabled.")
