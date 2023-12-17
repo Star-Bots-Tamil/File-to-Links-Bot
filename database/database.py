@@ -66,6 +66,9 @@ class Database:
         b_users = [user['id'] async for user in users]
         return b_users
 
+    async def update_settings(self, id, settings):
+        await self.col.update_one({'id': int(id)}, {'$set': {'settings': settings}})
+
     async def get_settings(self, id):
         default = {
             'file_secure': PROTECT_CONTENT,
