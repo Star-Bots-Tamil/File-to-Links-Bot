@@ -2,7 +2,6 @@ import os
 import logging
 import random
 import asyncio
-import time
 from pyrogram.types import ChatPermissions, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 from plugins.extract import extract_time, extract_user                               
@@ -20,38 +19,7 @@ from plugins.keyboard import ikb
 from pyrogram.file_id import FileId
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os, asyncio, aiofiles, aiofiles.os, datetime, traceback,random, string, time, logging
-logger = logging.getLogger(__name__)
-from random import choice
-import os
-import math
-import time
-import requests
-from pyrogram import Client, filters, enums
-from database.database import db
-from database.connection import connection
-from info import *
-import re
-import json
-import base64
-import datetime
-import time
-from utils import broadcast_messages
-import asyncio
-import re, asyncio, time, shutil, psutil, os, sys
-import os
-import aiohttp
-import requests
-from pyrogram.handlers import MessageHandler
-from pyshorteners import Shortener
-from utils import humanbytes
-logger = logging.getLogger(__name__)
-from asyncio.exceptions import TimeoutError
-from telethon.sync import TelegramClient
-from stream.utils.human_readable import humanbytes
-from urllib.parse import quote_plus
-from stream.utils.file_properties import get_name, get_hash, get_media_file_size
-import os, requests, asyncio, math, time, wget
-from io import BytesIO
+# existing imports ...
 
 #=====================================================
 
@@ -81,7 +49,7 @@ async def start(client, message):
             reply_markup=reply_markup,
             parse_mode=enums.ParseMode.HTML
         )
-        await asyncio.sleep(2) # 😢 https://github.com/EvamariaTG/EvaMaria/blob/master/plugins/p_ttishow.py#L17 😬 wait a bit, before checking.
+        await asyncio.sleep(2)
         if not await db.get_chat(message.chat.id):
             total=await client.get_chat_members_count(message.chat.id)
             await client.send_message(LOG_CHANNEL, script.LOG_TEXT_G.format(message.chat.title, message.chat.id, total, "Unknown"))       
@@ -171,185 +139,44 @@ async def start(client, message):
             parse_mode=enums.ParseMode.HTML
         )
         return
-    data = message.command[1]
-    try:
-        pre, file_id = data.split('_', 1)
-    except:
-        file_id = data
-        pre = ""
-    if data.split("-", 1)[0] == "DSTORE":
-        sts = await message.reply("<b>Pʟᴇᴀsᴇ ᴡᴀɪᴛ...</b>")
-        b_string = data.split("-", 1)[1]
-        decoded = (base64.urlsafe_b64decode(b_string + "=" * (-len(b_string) % 4))).decode("ascii")
-        try:
-            f_msg_id, l_msg_id, f_chat_id, protect = decoded.split("_", 3)
-        except:
-            f_msg_id, l_msg_id, f_chat_id = decoded.split("_", 2)
-            protect = "/pbatch" if PROTECT_CONTENT else "batch"
-        diff = int(l_msg_id) - int(f_msg_id)
-        async for msg in client.iter_messages(int(f_chat_id), int(l_msg_id), int(f_msg_id)):
-            if msg.media:
-                media = getattr(msg, msg.media.value)
-                grp_id = await active_connection(str(message.from_user.id))
-                settings = await get_settings(grp_id)
-                FILE_CAPTION = settings["caption"]
-                if settings["caption"]:
-                    try:
-                        f_caption=FILE_CAPTION.format(file_name=getattr(media, 'file_name', ''), file_size=getattr(media, 'file_size', ''), file_caption=getattr(msg, 'caption', ''))
-                    except Exception as e:
-                        logger.exception(e)
-                        f_caption = getattr(msg, 'caption', '')
-                else:
-                    media = getattr(msg, msg.media.value)
-                    file_name = getattr(media, 'file_name', '')
-                    f_caption = getattr(msg, 'caption', file_name)
-                try:
-                    await msg.copy(message.chat.id, caption=f_caption, protect_content=True if protect == "/pbatch" else False)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    await msg.copy(message.chat.id, caption=f_caption, protect_content=True if protect == "/pbatch" else False)
-                except Exception as e:
-                    logger.exception(e)
-                    continue
-            elif msg.empty:
-                continue
-            else:
-                try:
-                    await msg.copy(message.chat.id, protect_content=True if protect == "/pbatch" else False)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    await msg.copy(message.chat.id, protect_content=True if protect == "/pbatch" else False)
-                except Exception as e:
-                    logger.exception(e)
-                    continue
-            await asyncio.sleep(1) 
-        return await sts.delete()
-
-    elif data.split("-", 1)[0] == "verify":
-        userid = data.split("-", 2)[1]
-        token = data.split("-", 3)[2]
-        fileid = data.split("-", 3)[3]
-        if str(message.from_user.id) != str(userid):
-            return await message.reply_text(
-                text="<b>Iɴᴠᴀʟɪᴅ ʟɪɴᴋ ᴏʀ Exᴘɪʀᴇᴅ ʟɪɴᴋ !</b>",
-                protect_content=True if PROTECT_CONTENT else False
-            )
-        is_valid = await check_token(client, userid, token)
-        if is_valid == True:
-            if fileid == "send_all":
-                btn = [[
-                    InlineKeyboardButton("Gᴇᴛ Fɪʟᴇ", callback_data=f"checksub#send_all")
-                ]]
-                await verify_user(client, userid, token)
-                await message.reply_text(
-                    text=f"<b>Hᴇʏ {message.from_user.mention}, Yᴏᴜ ᴀʀᴇ sᴜᴄᴄᴇssғᴜʟʟʏ ᴠᴇʀɪғɪᴇᴅ !\nNᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ғᴏʀ ᴀʟʟ ᴍᴏᴠɪᴇs ᴛɪʟʟ ᴛʜᴇ ɴᴇxᴛ ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴ ᴡʜɪᴄʜ ɪs ᴀғᴛᴇʀ 12 ʜᴏᴜʀs ғʀᴏᴍ ɴᴏᴡ.</b>",
-                    protect_content=True if PROTECT_CONTENT else False,
-                    reply_markup=InlineKeyboardMarkup(btn)
-                )
-                return
-            btn = [[
-                InlineKeyboardButton("Get File", url=f"https://telegram.me/{temp.U_NAME}?start=files_{fileid}")
-            ]]
-            await message.reply_text(
-                text=f"<b>Hᴇʏ {message.from_user.mention}, Yᴏᴜ ᴀʀᴇ sᴜᴄᴄᴇssғᴜʟʟʏ ᴠᴇʀɪғɪᴇᴅ !\nNᴏᴡ ʏᴏᴜ ʜᴀᴠᴇ ᴜɴʟɪᴍɪᴛᴇᴅ ᴀᴄᴄᴇss ғᴏʀ ᴀʟʟ ᴍᴏᴠɪᴇs ᴛɪʟʟ ᴛʜᴇ ɴᴇxᴛ ᴠᴇʀɪғɪᴄᴀᴛɪᴏɴ ᴡʜɪᴄʜ ɪs ᴀғᴛᴇʀ 12 ʜᴏᴜʀs ғʀᴏᴍ ɴᴏᴡ.</b>",
-                protect_content=True if PROTECT_CONTENT else False,
-                reply_markup=InlineKeyboardMarkup(btn)
-            )
-            await verify_user(client, userid, token)
-            return
-        else:
-            return await message.reply_text(
-                text="<b>Iɴᴠᴀʟɪᴅ ʟɪɴᴋ ᴏʀ Exᴘɪʀᴇᴅ ʟɪɴᴋ !</b>",
-                protect_content=True if PROTECT_CONTENT else False
-            )
-
     files_ = await get_file_details(file_id)           
     if not files_:
-        pre, file_id = ((base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))).decode("ascii")).split("_", 1)
-        try:
-            if IS_VERIFY and not await check_verification(client, message.from_user.id):
-                btn = [[
-                    InlineKeyboardButton("Vᴇʀɪғʏ", url=await get_token(client, message.from_user.id, f"https://telegram.me/{temp.U_NAME}?start=", file_id)),
-                    InlineKeyboardButton("Hᴏᴡ Tᴏ Vᴇʀɪғʏ", url=HOW_TO_VERIFY)
-                ]]
-                await message.reply_text(
-                    text="<b>Yᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪғɪᴇᴅ!\nKɪɴᴅʟʏ ᴠᴇʀɪғʏ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ Sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ᴀᴄᴄᴇss ᴛᴏ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏᴠɪᴇs ᴜɴᴛɪʟ 12 ʜᴏᴜʀs ғʀᴏᴍ ɴᴏᴡ !</b>",
-                    protect_content=True if PROTECT_CONTENT else False,
-                    reply_markup=InlineKeyboardMarkup(btn)
-                )
-                return
-            msg = await client.send_cached_media(
-                chat_id=message.from_user.id,
-                file_id=file_id,
-                protect_content=True if pre == 'filep' else False,
-                reply_markup=InlineKeyboardMarkup(
-                    [
-                     [
-                      InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=await get_group(grp_id)),
-                      InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=await get_channel(grp_id))
-                   ],[
-                      InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=await get_admin(grp_id))
-                     ]
-                    ]
-                )
-            )
-            filetype = msg.media
-            file = getattr(msg, filetype.value)
-            title = file.file_name
-            size=get_size(file.file_size)
-            grp_id = await active_connection(str(message.from_user.id))
-            settings = await get_settings(grp_id)
-            FILE_CAPTION = settings["caption"]
-            f_caption = f"<code>{title}</code>"
-            if settings["caption"]:
-                try:
-                    f_caption=FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
-                except:
-                    return
-            await msg.edit_caption(f_caption)
-            return
-        except:
-            pass
-        return await message.reply('Nᴏ sᴜᴄʜ ғɪʟᴇ ᴇxɪsᴛ.')
+        buttons = [
+            [InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=await get_group(grp_id))],
+            [InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=await get_channel(grp_id))],
+            [InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=await get_admin(grp_id))]
+        ]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        return await message.reply('Nᴏ sᴜᴄʜ ғɪʟᴇ ᴇxɪsᴛ.', reply_markup=reply_markup)
+
     files = files_[0]
     title = files.file_name
-    size=get_size(files.file_size)
+    size = get_size(files.file_size)
     grp_id = await active_connection(str(message.from_user.id))
     settings = await get_settings(grp_id)
     FILE_CAPTION = settings["caption"]
-    f_caption=files.caption
+    f_caption = files.caption
     if settings["caption"]:
         try:
-            f_caption=FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
+            f_caption = FILE_CAPTION.format(file_name='' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
         except Exception as e:
             logger.exception(e)
-            f_caption=f_caption
+            f_caption = f_caption
     if f_caption is None:
         f_caption = f"{files.file_name}"
-    if IS_VERIFY and not await check_verification(client, message.from_user.id):
-        btn = [[
-            InlineKeyboardButton("Vᴇʀɪғʏ", url=await get_token(client, message.from_user.id, f"https://telegram.me/{temp.U_NAME}?start=", file_id)),
-            InlineKeyboardButton("Hᴏᴡ Tᴏ Vᴇʀɪғʏ", url=HOW_TO_VERIFY)
-        ]]
-        await message.reply_text(
-            text="<b>Yᴏᴜ ᴀʀᴇ ɴᴏᴛ ᴠᴇʀɪғɪᴇᴅ!\nKɪɴᴅʟʏ ᴠᴇʀɪғʏ ᴛᴏ ᴄᴏɴᴛɪɴᴜᴇ Sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀɴ ɢᴇᴛ ᴀᴄᴄᴇss ᴛᴏ ᴜɴʟɪᴍɪᴛᴇᴅ ᴍᴏᴠɪᴇs ᴜɴᴛɪʟ 12 ʜᴏᴜʀs ғʀᴏᴍ ɴᴏᴡ !</b>",
-            protect_content=True if PROTECT_CONTENT else False,
-            reply_markup=InlineKeyboardMarkup(btn)
-        )
-        return
-    feck=await client.send_cached_media(
+    feck = await client.send_cached_media(
         chat_id=message.from_user.id,
         file_id=file_id,
-        caption=f_caption+f"\n\n<b>Note :- This File Will be Deleted in {round(FILE_DELETE_TIMER/60)} Minutes. So Forward to Your Saved Messages.</b>",
+        caption=f_caption + f"\n\n<b>Note :- This File Will be Deleted in {round(FILE_DELETE_TIMER/60)} Minutes. So Forward to Your Saved Messages.</b>",
         protect_content=True if pre == 'filep' else False,
         reply_markup=InlineKeyboardMarkup(
             [
-             [
-              InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=await get_group(grp_id)),
-              InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=await get_channel(grp_id))
-           ],[
-              InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=await get_admin(grp_id))
-             ]
+                [
+                    InlineKeyboardButton('Sᴜᴘᴘᴏʀᴛ Gʀᴏᴜᴘ', url=await get_group(grp_id)),
+                    InlineKeyboardButton('Uᴘᴅᴀᴛᴇs Cʜᴀɴɴᴇʟ', url=await get_channel(grp_id))
+                ], [
+                    InlineKeyboardButton("Bᴏᴛ Oᴡɴᴇʀ", url=await get_admin(grp_id))
+                ]
             ]
         )
     )
