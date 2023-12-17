@@ -716,3 +716,70 @@ async def get_caption(client, message):
     settings = await get_settings(grp_id)
     caption = settings["caption"]
     await message.reply_text(f"<b>Caption for {title}\n\nYour Caption\n\n</b>{caption}")
+
+@Client.on_message(filters.command("send") & filters.user(ADMINS))
+async def send_msg(bot, message):
+    if message.reply_to_message:
+        target_id = message.text.split(" ", 1)[1]
+        out = "Users Saved In DB Are:\n\n"
+        success = False
+        try:
+            user = await bot.get_users(target_id)
+            users = await db.get_all_users()
+            async for usr in users:
+                out += f"{usr['id']}"
+                out += '\n'
+            if str(user.id) in str(out):
+                await message.reply_to_message.copy(int(user.id))
+                success = True
+            else:
+                success = False
+            if success:
+                await message.reply_text(f"<b>Your Message has Been Successfully Send to {user.mention}.</b>")
+            else:
+                await message.reply_text("<b>This User Didn't Started This Bot Yet !</b>")
+        except Exception as e:
+            await message.reply_text(f"<b>Error :- {e}</b>")
+    else:
+        await message.reply_text("<b>Use This Command as a Reply to any Message Using the Target Chat ID. For Example :- /send userid</b>")
+		   
+@Client.on_message(filters.channel & (filters.document | filters.video)  & ~filters.forwarded, group=-1)
+async def channel_receive_handler(bot, broadcast):
+    if int(broadcast.chat.id) in BANNED_CHANNELS:
+        await bot.leave_chat(broadcast.chat.id)
+        return
+    try:
+#        user_id = message.from_user.id
+#        username =  message.from_user.mention
+        channel_name = broadcast.chat.title
+        channel_id = broadcast.chat.id
+        log_msg = await broadcast.forward(
+            chat_id=LOG_CHANNEL,
+        )
+        fileName = get_name(log_msg)
+        filesize = humanbytes(get_media_file_size(log_msg))
+        star_stream = f"{URL}watch/{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
+        star_download = f"{URL}download/{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
+        shortened_link = await get_shortlink(star_stream)
+        await log_msg.reply_text(
+            text=f"**⚡ Link Generated Successfully..!\n\nFile Name :- {fileName} \n\nFile Size :- {filesize}\n\nChannel Name :- {channel_name}\n\nChannel ID :-** `{channel_id}`",
+            quote=True,
+            disable_web_page_preview=True,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Download Link", url=star_download),  # we download Link
+                                                InlineKeyboardButton('Watch Online', url=star_stream)]])  # web stream Link
+        )
+        await bot.edit_message_reply_markup(
+            chat_id=broadcast.chat.id,
+            message_id=broadcast.id,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📥 Fast Download Link", url=shortened_link)]])  # web stream Link
+        )
+    except FloodWait as w:
+        print(f"Sleeping for {str(w.x)}s")
+        await asyncio.sleep(w.x)
+        await bot.send_message(chat_id=FILES_CHANNEL,
+                             text=f"Got Floodwait Of {str(w.x)}s From {broadcast.chat.title}\n\n**Channel Id :-** `{str(broadcast.chat.id)}`",
+                             disable_web_page_preview=True)
+    except Exception as e:
+        await bot.send_message(chat_id=FILES_CHANNEL, text=f"**#ERROR_TRACKEBACK:** `{e}`", disable_web_page_preview=True)
+        print(f"Can't Edit Boardcast Message!\nError:  **Give me Edit Permission in Updates and Log Channel!{e}**")
+		
