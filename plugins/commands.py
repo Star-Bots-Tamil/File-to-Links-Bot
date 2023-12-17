@@ -12,7 +12,7 @@ from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.errors.exceptions.bad_request_400 import ChatAdminRequired, UserAdminInvalid
-from utils import get_settings, is_subscribed, save_user_settings, temp, active_connection, get_settings
+from utils import get_settings, is_subscribed, save_user_settings, temp, get_settings
 from urllib.parse import quote
 from pyrogram.file_id import FileId
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
