@@ -429,3 +429,290 @@ async def start(client, message):
     )
     await asyncio.sleep(FILE_DELETE_TIMER)
     await feck.delete()
+
+@Client.on_message(filters.command(["help"]) & filters.private, group=1)
+async def help(client, message):
+        buttons = [[
+            InlineKeyboardButton('📊 Status', callback_data='stats'),            
+            ],[
+            InlineKeyboardButton('Manuel Filter', callback_data='manuelfilter'),
+            InlineKeyboardButton('Auto Filter', callback_data='autofilter'),
+            InlineKeyboardButton('Connections', callback_data='coct')
+            ],[                       
+            InlineKeyboardButton('IMDB', callback_data='template'),
+            InlineKeyboardButton('Your Info', callback_data='extra'),
+            InlineKeyboardButton('Json', callback_data='son')
+            ],[           
+            InlineKeyboardButton('Font', callback_data='font'),
+            InlineKeyboardButton('Share Text', callback_data='sharetxt'),           
+            InlineKeyboardButton('Text 2 Speech', callback_data='ttss')
+            ],[
+            InlineKeyboardButton('Graph', callback_data='graph'),
+            InlineKeyboardButton("File Store", callback_data='newdata'),
+            InlineKeyboardButton('Sticker ID', callback_data='stickerid')                                   
+            ],[                               
+            InlineKeyboardButton('Purge', callback_data='purges'),
+            InlineKeyboardButton('Ping', callback_data='pings'),
+            InlineKeyboardButton('Short Link', callback_data='short')
+            ],[
+            InlineKeyboardButton('Mute', callback_data='restric'),
+            InlineKeyboardButton('Kick', callback_data='zombies'),
+            InlineKeyboardButton('Pin', callback_data='pin')
+            ],[
+            InlineKeyboardButton('Password', callback_data='password'),
+            InlineKeyboardButton("Paste", callback_data='pastes'),
+            InlineKeyboardButton('YT-DL', callback_data='ytdl')
+            ],[
+            InlineKeyboardButton('🏠 Home 🏠', callback_data='start')           
+        ]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await message.reply_photo(
+            photo=random.choice(PICS),
+            caption=script.HELP_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+@Client.on_message(filters.command(["about"]) & filters.private, group=1)
+async def about(client, message):
+        buttons = [[
+            InlineKeyboardButton('Source Code', callback_data='source')
+            ],[		
+            InlineKeyboardButton('🏠 Home 🏠', callback_data='start'),
+            InlineKeyboardButton('😎 Help', callback_data='help')
+        ]]
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await message.reply_photo(
+            photo=random.choice(PICS),
+            caption=script.ABOUT_TXT.format(message.from_user.mention, temp.U_NAME, temp.B_NAME),
+            reply_markup=reply_markup,
+            parse_mode=enums.ParseMode.HTML
+        )
+
+@Client.on_message(filters.command('logs') & filters.user(ADMINS))
+async def log_file(bot, message):
+    """Send Log File 📂"""
+    file = 'StarMoviesBot.log'
+    caption = '#Logs'
+    try:
+        await message.reply_document(
+            file,
+            caption=caption,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("Get Web URL", callback_data='webmi')]])
+	)
+    except Exception as e:
+        await message.reply(str(e))
+
+@Client.on_message(filters.command('set_shortlink'))
+async def set_shortlink(bot, message):
+    chat_type = message.chat.type
+    if chat_type == enums.ChatType.PRIVATE:
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This command only works on groups !</b>")
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grpid = message.chat.id
+        title = message.chat.title
+    else:
+        return
+    data = message.text
+    userid = message.from_user.id
+    user = await bot.get_chat_member(grpid, userid)
+    if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
+        return await message.reply_text("<b>You don't have access to use this command !</b>")
+    else:
+        pass
+    try:
+        command, shortlink_url, api = data.split(" ")
+    except:
+        return await message.reply_text("<b>Command Incomplete :(\n\nGive me a shortlink and api along with the command !\n\nFormat: <code>/set_shortner tnshort.net d03a53149bf186ac74d58ff80d916f7a79ae5745</code></b>")
+    reply = await message.reply_text("<b>Please Wait...</b>")
+    await save_group_settings(grpid, 'shortlink', shortlink_url)
+    await save_group_settings(grpid, 'shortlink_api', api)
+    await save_group_settings(grpid, 'is_shortlink', True)
+    await reply.edit_text(f"<b>Successfully added Shortlink API for {title}.\n\nCurrent Shortlink Website: <code>{shortlink_url}</code>\nCurrent API: <code>{api}</code></b>")
+
+@Client.on_message(filters.command("get_shortlink"))
+async def showshortlink(bot, message):
+    chat_type = message.chat.type
+    if chat_type == enums.ChatType.PRIVATE:
+        return await message.reply_text(f"<b>Hey {message.from_user.mention}, This Command Only Works in Group\n\nTry this command in your own group, if you are using me in your group</b>")
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grpid = message.chat.id
+        title = message.chat.title
+    else:
+        return
+    chat_id=message.chat.id
+    userid = message.from_user.id
+    user = await bot.get_chat_member(grpid, userid)
+    settings = await get_settings(chat_id) #fetching settings for group
+    if 'shortlink' in settings.keys():
+        su = settings['shortlink']
+        sa = settings['shortlink_api']
+    else:
+        return await message.reply_text("<b>Shortener Url Not Connected\n\nYou can Connect Using /shortlink command</b>")
+    if 'tutorial' in settings.keys():
+        st = settings['tutorial']
+    else:
+        return await message.reply_text("<b>Tutorial Link Not Connected\n\nYou can Connect Using /set_tutorial command</b>")
+    if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
+        return await message.reply_text("<b>Tʜɪs ᴄᴏᴍᴍᴀɴᴅ Wᴏʀᴋs Oɴʟʏ Fᴏʀ ᴛʜɪs Gʀᴏᴜᴘ Oᴡɴᴇʀ/Aᴅᴍɪɴ\n\nTʀʏ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪɴ ʏᴏᴜʀ Oᴡɴ Gʀᴏᴜᴘ, Iғ Yᴏᴜ Aʀᴇ Usɪɴɢ Mᴇ Iɴ Yᴏᴜʀ Gʀᴏᴜᴘ</b>")
+    else:
+        if settings["is_shortlink"]:
+            return await message.reply_text(f"<b>Shortlink Website: <code>{su}</code>\n\nApi: <code>{sa}</code>\n\nTutorial: <code>{st}</code></b>")
+        elif settings["is_tutorial"]:
+            return await message.reply_text(f"<b>Tutorial: <code>{st}</code></b>")
+        else:
+            return await message.reply_text("Shortlink Not Connected")
+
+@Client.on_message(filters.command("set_tutorial"))
+async def set_tutorial_link(client, message):
+    chat_type = message.chat.type
+    if chat_type == enums.ChatType.PRIVATE:
+        await message.reply_text("<b>Please use this command in your group to set tutorial link.</b>")
+        return
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grpid = message.chat.id
+        title = message.chat.title
+    else:
+        return 
+    
+    userid = message.from_user.id
+    user = await client.get_chat_member(grpid, userid)
+    if user.status != enums.ChatMemberStatus.ADMINISTRATOR and user.status != enums.ChatMemberStatus.OWNER and str(userid) not in ADMINS:
+        await message.reply_text("<b>You don't have access to use this command!</b>")
+        return
+    else:
+        pass
+    if len(message.command) == 1:
+        return await message.reply("<b>Give me a tutorial link along with this command\n\nCommand Usage: /set_tutorial your tutorial link</b>")
+    elif len(message.command) == 2:
+        reply = await message.reply_text("<b>Please Wait...</b>")
+        tutorial = message.command[1]
+        await save_group_settings(grpid, 'tutorial', tutorial)
+        await save_group_settings(grpid, 'is_tutorial', True)
+        await reply.edit_text(f"<b>Successfully Added Tutorial\n\nHere is your tutorial link for your group {title} - <code>{tutorial}</code></b>")
+    else:
+        return await message.reply("<b>You entered Incorrect Format\n\nFormat: /set_tutorial your tutorial link</b>")
+	    
+@Client.on_message(filters.command('get_tutorial'))
+async def get_tutorial_link(client, message):
+    userid = message.from_user.id if message.from_user else None
+    if not userid:
+        return await message.reply(f"You are anonymous admin. Use /connect {message.chat.id} in PM")
+    chat_type = message.chat.type
+
+    if chat_type == enums.ChatType.PRIVATE:
+        grpid = await active_connection(str(userid))
+        if grpid is not None:
+            grp_id = grpid
+            try:
+                chat = await client.get_chat(grpid)
+                title = chat.title
+            except:
+                await message.reply_text("Make sure I'm present in your group!!", quote=True)
+                return
+        else:
+            await message.reply_text("I'm not connected to any groups!", quote=True)
+            return
+
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grp_id = message.chat.id
+        title = message.chat.title
+
+    else:
+        return
+
+    st = await client.get_chat_member(grp_id, userid)
+    if (
+            st.status != enums.ChatMemberStatus.ADMINISTRATOR
+            and st.status != enums.ChatMemberStatus.OWNER
+            and str(userid) not in ADMINS
+    ):
+        return
+
+    settings = await get_settings(grp_id)
+    tutorial = settings["tutorial"]
+    await message.reply_text(f"<b>Tutorial for {title}\n\nYour Tutorial Link :- {tutorial}</b>")
+
+@Client.on_message(filters.command('set_caption'))
+async def save_caption(client, message):
+    userid = message.from_user.id if message.from_user else None
+    if not userid:
+        return await message.reply(f"You are anonymous admin. Use /connect {message.chat.id} in PM")
+    chat_type = message.chat.type
+
+    if chat_type == enums.ChatType.PRIVATE:
+        grpid = await active_connection(str(userid))
+        if grpid is not None:
+            grp_id = grpid
+            try:
+                chat = await client.get_chat(grpid)
+                title = chat.title
+            except:
+                await message.reply_text("Make sure I'm present in your group!!", quote=True)
+                return
+        else:
+            await message.reply_text("I'm not connected to any groups!", quote=True)
+            return
+
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grp_id = message.chat.id
+        title = message.chat.title
+
+    else:
+        return
+
+    st = await client.get_chat_member(grp_id, userid)
+    if (
+            st.status != enums.ChatMemberStatus.ADMINISTRATOR
+            and st.status != enums.ChatMemberStatus.OWNER
+            and str(userid) not in ADMINS
+    ):
+        return
+
+    try:
+        caption = message.text.split(" ", 1)[1]
+    except:
+        return await message.reply_text("<b>__Use this Command to Set the Custom Caption for Your Files. For Setting Your Caption Send Caption in the Format\n`/set_caption`__\n\nFile Caption Keys\n• `{file_name}` :- Replaced by the Filename.\n• `{file_size}` :- Replaced by the Filesize.\n• {file_caption}` :- Replaced by the Captain of Videos.\n\nExample :- `/set_caption <b>File Name :- {file_name}\n\n💾 File Size :- {file_size}\n\n✍🏻 File Caption :- {file_caption}</b>`\n\n⚠️ Note :- You Can Check the Current Caption using /get_caption</b>")
+    
+    await save_group_settings(grp_id, 'caption', caption)
+    await message.reply_text(f"Successfully changed caption for {title} to\n\n{caption}")
+
+@Client.on_message(filters.command('get_caption'))
+async def get_caption(client, message):
+    userid = message.from_user.id if message.from_user else None
+    if not userid:
+        return await message.reply(f"You are anonymous admin. Use /connect {message.chat.id} in PM")
+    chat_type = message.chat.type
+
+    if chat_type == enums.ChatType.PRIVATE:
+        grpid = await active_connection(str(userid))
+        if grpid is not None:
+            grp_id = grpid
+            try:
+                chat = await client.get_chat(grpid)
+                title = chat.title
+            except:
+                await message.reply_text("Make sure I'm present in your group!!", quote=True)
+                return
+        else:
+            await message.reply_text("I'm not connected to any groups!", quote=True)
+            return
+
+    elif chat_type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+        grp_id = message.chat.id
+        title = message.chat.title
+
+    else:
+        return
+
+    st = await client.get_chat_member(grp_id, userid)
+    if (
+            st.status != enums.ChatMemberStatus.ADMINISTRATOR
+            and st.status != enums.ChatMemberStatus.OWNER
+            and str(userid) not in ADMINS
+    ):
+        return
+
+    settings = await get_settings(grp_id)
+    caption = settings["caption"]
+    await message.reply_text(f"<b>Caption for {title}\n\nYour Caption\n\n</b>{caption}")
