@@ -5,7 +5,6 @@ import asyncio
 from pyrogram.types import ChatPermissions, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant, UsernameNotOccupied, ChatAdminRequired, PeerIdInvalid
 from plugins.extract import extract_time, extract_user                               
-from plugins.extract import extract_time, extract_user 
 from info import ADMINS
 from Script import script
 from time import time, sleep
@@ -13,9 +12,8 @@ from pyrogram import Client, filters, enums
 from pyrogram.errors import FloodWait
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden
 from pyrogram.errors.exceptions.bad_request_400 import ChatAdminRequired, UserAdminInvalid
-from utils import get_settings, is_subscribed, save_user_settings, temp
+from utils import get_settings, is_subscribed, save_user_settings, temp, active_connection, get_settings
 from urllib.parse import quote
-from plugins.keyboard import ikb
 from pyrogram.file_id import FileId
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import os, asyncio, aiofiles, aiofiles.os, datetime, traceback,random, string, time, logging
@@ -56,12 +54,6 @@ from io import BytesIO
 ADMIN = int(os.environ.get("ADMIN", "1391556668"))
 
 #=====================================================
-
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-import random
-import asyncio
-from your_module import get_size, get_group, get_channel, get_admin, active_connection, get_settings, get_file_details, is_subscribed, PICS, FILE_DELETE_TIMER
 
 @Client.on_message(filters.command("start") & filters.incoming)
 async def start(client, message):
