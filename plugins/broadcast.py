@@ -25,9 +25,6 @@ async def broadcast_cancel(bot, query):
     if ident == 'users':
         await query.message.edit("**Trying to Cancel Users Broadcasting...**")
         temp.USERS_CANCEL = True
-    elif ident == 'groups':
-        temp.GROUPS_CANCEL = True
-        await query.message.edit("**Trying to Cancel Groups Broadcasting...**")
 
 @Client.on_message(filters.command("broadcast") & filters.user(ADMINS) & filters.reply)
 async def broadcast(bot, message):
