@@ -1,10 +1,10 @@
 if [ -z $UPSTREAM_REPO ]
 then
   echo "Cloning main Repository"
-  git clone https://github.com/Star-Bots-Tamil/Star-Movies-Bot /Eva
+  git clone https://github.com/Star-Bots-Tamil/File-to-Links-Bot /app
 else
   echo "Cloning Custom Repo from $UPSTREAM_REPO "
-  git clone $UPSTREAM_REPO /Eva
+  git clone $UPSTREAM_REPO /app
 fi
 cd /Eva
 pip3 install -U -r requirements.txt
