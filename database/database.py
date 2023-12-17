@@ -71,10 +71,6 @@ class Database:
 
     async def get_settings(self, id):
         default = {
-            'file_secure': PROTECT_CONTENT,
-            'tutorial' : DOWNLOAD_TEXT_URL,
-            'is_tutorial' : IS_TUTORIAL,
-            'caption': CUSTOM_FILE_CAPTION,
             'shortlink': SHORTLINK_URL,
             'shortlink_api': SHORTLINK_API,
             'is_shortlink': IS_SHORTLINK
