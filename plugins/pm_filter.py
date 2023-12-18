@@ -50,7 +50,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
             reply_markup=reply_markup,
             parse_mode=enums.ParseMode.HTML
         )
-        await query.answer(MSG_ALRT)
+        #await query.answer(MSG_ALRT)
     
     elif query.data == "help":
         buttons = [[
@@ -114,7 +114,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         monsize = get_size(monsize)
         free = get_size(free)
         if query.from_user.id in ADMINS:
-            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML), reply_markup=reply_markup)
+            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML, reply_markup=reply_markup)
         else:
             await query.answer("Your Not Administrator ⚠️", show_alert=True)
 
@@ -136,7 +136,7 @@ async def cb_handler(client: Client, query: CallbackQuery):
         monsize = get_size(monsize)
         free = get_size(free)
         if query.from_user.id in ADMINS:
-            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML), reply_markup=reply_markup)
+            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML, reply_markup=reply_markup)
         else:
             await query.answer("Your Not Administrator ⚠️", show_alert=True)
     elif query.data == "refresh":
@@ -151,6 +151,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
         monsize = get_size(monsize)
         free = get_size(free)
         if query.from_user.id in ADMINS:
-            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML), reply_markup=reply_markup)
+            await query.message.edit_text(script.STATUS_TXT.format(users, monsize, free), enums.ParseMode.HTML, reply_markup=reply_markup)
         else:
             await query.answer("Your Not Administrator ⚠️", show_alert=True)
